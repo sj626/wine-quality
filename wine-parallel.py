@@ -24,7 +24,7 @@ spark = SparkSession.builder.appName(APP_NAME).getOrCreate()
 """
 
 client = boto3.client('s3')
-traindataresponse = client.get_object(Bucket='mk2246-ml-files',Key='TrainingDataset.csv')
+traindataresponse = client.get_object(Bucket='s3://wine-bucket-testing/TrainingDataset.csv',Key='TrainingDataset.csv')
 traindsString=traindataresponse['Body'].read().decode('ascii')
 traindsString = traindsString.replace('"','')
 traindsList = traindsString.split('\r\n')
@@ -64,7 +64,7 @@ rf = RandomForestClassifier(featuresCol='features', labelCol='quality')
 rfModel = rf.fit(traindf)
 
 """
-    Save the Random Forest Classification Model to S3 as a tar.gz
+     S3 as a tar.gz
 """
 path = '/rfmodel/'
 rfModel.write().overwrite().save(path)
@@ -81,14 +81,14 @@ with tarfile.open("RFMLModel.tar.gz", "w:gz") as tarhandle:
 
 client.upload_file(
         Filename="RFMLModel.tar.gz",
-        Bucket='mk2246-ml-files',
+        Bucket='sjolaosho.tar.gz',
         Key='RFMLModel.tar.gz'
 )
 
 """
-    Retrieve validation data set from S3 Bucket and prepare the dataframe.
+    S3 Bucket and prepare the dataframe.
 """
-testdataresponse = client.get_object(Bucket='mk2246-ml-files',Key='ValidationDataset.csv')
+testdataresponse = client.get_object(Bucket='s3://wine-bucket-testing/ValidationDataset.csvs',Key='ValidationDataset.csv')
 testdsString = testdataresponse['Body'].read().decode('ascii')
 testdsString = testdsString.replace('"','')
 testdsString = testdsString.replace('b','')
@@ -135,7 +135,7 @@ rfTest = rfModel.transform(testdf)
 
 # Apply model from S3 to validation dataset
 tarloc='mlmodel.tar.gz'
-client.download_file(Bucket='mk2246-ml-files', Key='RFMLModel.tar.gz', Filename=tarloc)
+client.download_file(Bucket=' ', Key='RFMLModel.tar.gz', Filename=tarloc)
 tar = tarfile.open(tarloc, "r:gz")
 tar.extractall('./extracted/')
 
@@ -153,21 +153,19 @@ rfModelTest = s3model.transform(testdf)
 """
 evaluator = MulticlassClassificationEvaluator(labelCol="quality", predictionCol="prediction", metricName="accuracy")
 rfaccuracy = evaluator.evaluate(rfTest)
-print("************************************************************************")
+print("           ")
 print("F1 Score for Random Forest Classifier for local model = %g " % rfaccuracy)
-print("************************************************************************")
+print("          ")
 
 s3rfaccuracy = evaluator.evaluate(rfModelTest)
 
-print("*****************************************************************************************************")
+print("              ")
 print("F1 Score for Random Forest Classifier for validation dataset for s3 saved model = %g " % s3rfaccuracy)
-print("*****************************************************************************************************")
+print("             ")
 
 # Remove extracted files from environment
 subprocess.run("rm -r extracted/", shell=True)
 subprocess.run("rm -r modeltozip/", shell=True)
-subprocess.run("rm mlmodel.tar.gz", shell=True)
-subprocess.run("rm RFMLModel.tar.gz", shell=True)
 subprocess.run("hadoop fs -rm -r /model", shell=True)
 
 sc.stop()
