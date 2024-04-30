@@ -1,22 +1,17 @@
-"""
-        UCID:   mk2246
-        Desc:   Wine Quality Prediction Application.
-"""
-
-from pyspark import SparkConf, SparkContext
-from pyspark.sql import SparkSession
-from pyspark.ml.classification import RandomForestClassificationModel
 from pyspark.sql.types import IntegerType, FloatType
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 from pyspark.ml.feature import VectorAssembler
+from pyspark import SparkConf, SparkContext
+from pyspark.sql import SparkSession
+from pyspark.ml.classification import RandomForestClassificationModel
 import boto3
 import tarfile
 import subprocess
 import sys
 
-###### CREATE SPARK APPLICATION ######
+// CREATE SPARK APP
 
-APP_NAME = "Wine Quality Predictor Application"
+APP_NAME = "Wine-Test"
 conf = SparkConf().setAppName(APP_NAME)
 sc = SparkContext(conf=conf)
 
@@ -30,8 +25,8 @@ if len(arguments) > 1:
         filepath = "./"+filename
 
 if len(arguments) <= 1:
-        ###### VALIDATION DATA FILE ######
-        testdataresponse = client.get_object(Bucket='mk2246-ml-files',Key='ValidationDataset.csv')
+        // VALIDATE FILE
+        testdataresponse = client.get_object(Bucket='',Key='ValidationDataset.csv')
         testdsString = testdataresponse['Body'].read().decode('ascii')
         testdsString = testdsString.replace('"','')
         testdsString = testdsString.replace('b','')
@@ -47,7 +42,7 @@ if len(arguments) <= 1:
 
         testdf = spark.createDataFrame(testtupledata,testcolumns)
 else:
-        ###### TEST DATA FILE PASSED AS ARGUMENT ######
+        //TEST DATA
         testdf = spark.read.option("header", True).option("delimiter",";").csv(filepath)
 
 columns = ['fixed_acidity', 'volatile_acidity', 'citric_acid', 'residual_sugar', 'chlorides', 'free_sulfur_dioxide'\
@@ -69,21 +64,21 @@ testdf = testdf.withColumn('fixed_acidity', testdf.fixed_acidity.cast(FloatType(
                                 .withColumn('alcohol', testdf.alcohol.cast(FloatType()))\
                                 .withColumn('quality', testdf.quality.cast(IntegerType()))
 
-###### MODEL PREDICTION ######
+// MODEL PREDICTION 
 vatestdf = VectorAssembler(inputCols=columns,outputCol='features')
 testdf = vatestdf.transform(testdf)
 
-###### RETRIEVE MODEL FROM S3 ######
-tarloc='mlmodel.tar.gz'
-client.download_file(Bucket='mk2246-ml-files', Key='RFMLModel.tar.gz', Filename=tarloc)
+// RETRIEVE MODEL FROM S3 
+tarloc='sjolaosho.tar.gz'
+client.download_file(Bucket='arn:aws:s3:::wine-bucket-testing', Key='RFMLModel.tar.gz', Filename=tarloc)
 tar = tarfile.open(tarloc, "r:gz")
 tar.extractall('./extracted/')
 
-###### APPLY MODEL ######
+// MODEL
 s3model = RandomForestClassificationModel.load('./extracted/modeltozip/rfmodel')
 rfModelTest = s3model.transform(testdf)
 
-###### MODEL EVALUATION ######
+// MODEL EVALUATION
 evaluator = MulticlassClassificationEvaluator(labelCol="quality", predictionCol="prediction", metricName="accuracy")
 
 s3rfaccuracy = evaluator.evaluate(rfModelTest)
@@ -96,7 +91,7 @@ display= rfModelTest['quality','prediction']
 display.show(display.count())
 
 # Removing the extracted files from the environment
-subprocess.run("rm mlmodel.tar.gz", shell=True)
+subprocess.run("rm sjolaosho.tar.gz", shell=True)
 subprocess.run("rm -r extracted/", shell=True)
 
 sc.stop()
