@@ -1,8 +1,3 @@
-"""
-    UCID:   mk2246
-    Desc:   Wine Quality Prediction Parallel Training Application.
-"""
-
 from pyspark import SparkConf, SparkContext
 from pyspark.sql import SparkSession
 from pyspark.ml.classification import RandomForestClassifier, RandomForestClassificationModel
@@ -16,11 +11,9 @@ import boto3
 import subprocess
 import tarfile
 
-"""
-    Create Spark Application
-"""
 
-APP_NAME = "Wine Quality Predictor Application"
+
+APP_NAME = "Wine-Test"
 conf = SparkConf().setAppName(APP_NAME)
 sc = SparkContext(conf=conf)
 
