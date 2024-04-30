@@ -83,9 +83,9 @@ evaluator = MulticlassClassificationEvaluator(labelCol="quality", predictionCol=
 
 s3rfaccuracy = evaluator.evaluate(rfModelTest)
 
-print("************************************************************************")
-print("F1 Score for Random Forest Classifier for test data = %g " % s3rfaccuracy)
-print("************************************************************************")
+print("     ")
+print("F1 Forest Classifier for test data = %g " % s3rfaccuracy)
+print("     ")
 
 display= rfModelTest['quality','prediction']
 display.show(display.count())
