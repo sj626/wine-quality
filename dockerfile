@@ -1,16 +1,23 @@
-FROM amazonlinux:latest
-COPY --from=openjdk:8-jre-slim /usr/local/openjdk-8 /usr/local/openjdk-8
-ENV JAVA_HOME /usr/local/openjdk-8
-RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-8/bin/java 1
+FROM apache/spark:3.2.0
+
+# Install Python and required dependencies
+RUN yum update -y && \
+    yum install -y python3 && \
+    yum clean all && \
+    python3 -m ensurepip --upgrade && \
+    rm -r /root/.cache
+
+# Set working directory
 WORKDIR /app
 
+# Copy the code files
 COPY . .
 
-RUN yum update
-RUN yum install python -y
-RUN python -m ensurepip --upgrade
+# Install Python dependencies
 RUN pip3 install -r requirements.txt
 
-EXPOSE 80 $ 8080
+# Expose necessary ports
+EXPOSE 8080
 
-CMD ["python", "app.py"]
+# Command to run the Python script
+CMD ["python3", "app.py"]
