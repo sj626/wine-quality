@@ -37,7 +37,7 @@ Create a new Maven project in your preferred IDE.
 
 Add the necessary Spark dependencies to the pom.xml file.
 
-Implement the Spark ML model training code in Java:
+Implement the Spark ML model training code in Java or Pyhton:
 
 Usage
 Training the Model
